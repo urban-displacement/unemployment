@@ -1,16 +1,7 @@
-library(colorout)
-library(sqldf)
-library(arm)
-library(data.table)
-library(dplyr)
-library(foreach)
-library(doMC)
-library(openxlsx)
-library(tidycensus)
-
-remove(list=objects())
+rm(list=setdiff(ls(), c("wd", "CENSUS_API_KEY")))
 options(digits=2, scipen=9, width=110, java.parameters = "-Xrs")
-setwd("~/Documents/0Projects/covid19/unemployment/unemployment_cps_mrp/downloaded_data/acs")
+#setwd("~/Documents/0Projects/covid19/unemployment/unemployment_cps_mrp/downloaded_data/acs")
+setwd(paste0(wd, "unemployment_cps_mrp/downloaded_data/acs"))
 
 ################################################################################################################
 
@@ -21,16 +12,30 @@ variables <- grep("--", variables$CONCAT, value=TRUE, invert=TRUE)
 for (year in 2018:2017) {
   registerDoMC(2)
   surveys <- c("acs1", "acs5")
-  raw <- foreach(survey = surveys) %dopar% {
+  var_chunks <- 1:ceiling(length(variables)/24)
+  raw1 <- foreach(var_chunk = var_chunks) %dopar% {
+    index_list <- ifelse(var_chunk*24 < length(variables), list((((var_chunk-1)*24)+1):(var_chunk*24)), list((((var_chunk-1)*24)+1):length(variables)))[[1]]
     tmp <- get_acs(
       geography="county", 
-      variables=variables, 
+      variables=variables[index_list], 
       year=year, 
-      survey=survey)
-    tmp <- data.frame(year=year, survey=survey, tmp, stringsAsFactors=FALSE)
+      survey="acs5")
+    tmp <- data.frame(year=year, survey="acs5", tmp, stringsAsFactors=FALSE)
   }
+  raw2 <- foreach(var_chunk = var_chunks) %dopar% {
+    index_list <- ifelse(var_chunk*24 < length(variables), c((((var_chunk-1)*24)+1):(var_chunk*24)), c((((var_chunk-1)*24)+1):length(variables)))[[1]]
+    tmp <- get_acs(
+      geography="county", 
+      variables=variables[index_list], 
+      year=year, 
+      survey="acs1")
+    tmp <- data.frame(year=year, survey="acs1", tmp, stringsAsFactors=FALSE)
+  }
+  
 
-  geog <- bind_rows(raw)
+  raw1 <- bind_rows(raw1)
+  raw2 <- bind_rows(raw2)
+  geog <- bind_rows(raw1, raw2)
   saveRDS(geog, file=paste0("county_data_raw_", year, ".rds"))
 }
 

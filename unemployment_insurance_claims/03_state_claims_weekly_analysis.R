@@ -1,17 +1,9 @@
-library(colorout)
-library(dplyr)
-library(htmltab)
-library(foreach)
-library(doMC)
-library(sqldf)
-library(RJDBC)
-library(tidyr)
-
-remove(list=objects())
+rm(list=setdiff(ls(), c("wd", "CENSUS_API_KEY", "vertica")))
 options(digits=2, scipen=9, width=110, java.parameters = "-Xrs")
-setwd(ifelse(Sys.info()[['sysname']]=="Darwin", 
-  "~/Documents/0Projects/covid19/unemployment/unemployment_insurance_claims/",
-  "~/"))
+#setwd(ifelse(Sys.info()[['sysname']]=="Darwin", 
+#  "~/Documents/0Projects/covid19/unemployment/unemployment_insurance_claims/",
+#  "~/"))
+setwd(paste0(wd, "unemployment_insurance_claims"))
 
 ################################################################################################################
 
@@ -20,20 +12,22 @@ PlottingWindow <- function() {
   par(mfrow=c(3,1), mar=c(2.25,2,2,1), mgp=c(1,0.01,0), tck=0.005, lwd=0.5, pty="s", family="CMU Sans Serif")
 }
 
-vertica_username <- system("echo $VERTICA_USERNAME", intern=TRUE)
-vertica_password <- system("echo $VERTICA_PASSWORD", intern=TRUE)
-vertica_host <- system("echo $VERTICA_HOST", intern=TRUE)
-
-drv <- JDBC("com.vertica.jdbc.Driver", 
-            ifelse(Sys.info()[['sysname']]=="Darwin", "~/RJDBC/vertica-jdk5-6.1.3-0.jar",
-                                                      "~/RJDBC/vertica-jdk5-6.1.3-0.jar"))
-conn <- dbConnect(drv, paste0("jdbc:vertica://", vertica_host, ":5433/vertica4"), vertica_username, vertica_password)
-V <- function(x) dbGetQuery(conn, x)
+if(vertica == TRUE){
+  vertica_username <- system("echo $VERTICA_USERNAME", intern=TRUE)
+  vertica_password <- system("echo $VERTICA_PASSWORD", intern=TRUE)
+  vertica_host <- system("echo $VERTICA_HOST", intern=TRUE)
+  
+  drv <- JDBC("com.vertica.jdbc.Driver", 
+              ifelse(Sys.info()[['sysname']]=="Darwin", "~/RJDBC/vertica-jdk5-6.1.3-0.jar",
+                     "~/RJDBC/vertica-jdk5-6.1.3-0.jar"))
+  conn <- dbConnect(drv, paste0("jdbc:vertica://", vertica_host, ":5433/vertica4"), vertica_username, vertica_password)
+  V <- function(x) dbGetQuery(conn, x)
+}
 
 ################################################################################################################
 # get data
 
-system("sh 04_upload_to_server.sh")
+#system("sh 04_upload_to_server.sh")
 
 dat <- readRDS("state_claims_weekly.rds")
 dat <- dat[dat$date >= "2020-02-15",]

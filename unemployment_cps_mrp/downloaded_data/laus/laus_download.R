@@ -1,18 +1,9 @@
-library(colorout)
-library(sqldf)
-library(arm)
-library(data.table)
-library(dplyr)
-library(doMC)
-library(foreach)
-library(tidyr)
-library(stringr)
-
-remove(list=objects())
+rm(list=setdiff(ls(), c("wd", "CENSUS_API_KEY")))
 options(digits=2, scipen=9, width=110, java.parameters = "-Xrs")
-setwd(ifelse(Sys.info()[['sysname']]=="Darwin", 
-  "~/Documents/0Projects/covid19/unemployment/unemployment_cps_mrp/downloaded_data/laus",
-  "~/unemployment/unemployment_cps_mrp/downloaded_data/laus"))
+#setwd(ifelse(Sys.info()[['sysname']]=="Darwin", 
+#  "~/Documents/0Projects/covid19/unemployment/unemployment_cps_mrp/downloaded_data/laus",
+#  "~/unemployment/unemployment_cps_mrp/downloaded_data/laus"))
+setwd(paste0(wd, "unemployment_cps_mrp/downloaded_data/laus"))
 
 PlottingWindow <- function() {
   quartz(width=2.75, height=7.75)
