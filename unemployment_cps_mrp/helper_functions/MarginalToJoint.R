@@ -68,6 +68,8 @@ MarginalToJoint <- function(marg, survey, state) {
   # first get sex x race x citizenship for all age groups
   message(state, ": sex x race x citizenship")
   survey_ref <- survey[survey$state == state,]
+  survey_ref$female <- as.factor(survey_ref$female)
+  survey_ref$agegrp <- as.factor(survey_ref$agegrp)
   survey_ref$sex <- c("male", "female")[survey_ref$female]
   survey_ref$age <- c("1617", "1819", "2024", "2529", "3034", "3544", "3544", "4554", "4554", "5564", "5564", "6574", "6574", "75plus")[survey_ref$agegrp]
   survey_ref$race <- c("white", "black", "hispanic", "asian", "native", "other")[survey_ref$race]
@@ -112,6 +114,8 @@ MarginalToJoint <- function(marg, survey, state) {
   # split out the new age years
   message(state, ": age groups")
   survey_ref <- survey[survey$state == state,]
+  survey_ref$female <- as.factor(survey_ref$female)
+  survey_ref$agegrp <- as.factor(survey_ref$agegrp)
   survey_ref$sex <- c("male", "female")[survey_ref$female]
   survey_ref$age <- c("1617", "1819", "2024", "2529", "3034", "3544", "3544", "4554", "4554", "5564", "5564", "6574", "6574", "75plus")[survey_ref$agegrp]
   survey_ref$age_end <- c("1617", "1819", "2024", "2529", "3034", "3539", "4044", "4549", "5054", "5559", "6064", "6574", "6574", "75plus")[survey_ref$agegrp]
@@ -166,6 +170,8 @@ MarginalToJoint <- function(marg, survey, state) {
   # add marital status
   message(state, ": marital status")
   survey_ref <- survey[survey$state == state,]
+  survey_ref$female <- as.factor(survey_ref$female)
+  survey_ref$agegrp <- as.factor(survey_ref$agegrp)
   survey_ref$sex <- c("male", "female")[survey_ref$female]
   survey_ref$age <- c("1617", "1819", "2024", "2529", "3034", "3539", "4044", "4549", "5054", "5559", "6064", "6574", "6574", "75plus")[survey_ref$agegrp]
   survey_ref$race <- c("white", "black", "hispanic", "asian", "native", "other")[survey_ref$race]
@@ -201,6 +207,8 @@ MarginalToJoint <- function(marg, survey, state) {
   # add education
   message(state, ": education")
   survey_ref <- survey[survey$state == state,]
+  survey_ref$female <- as.factor(survey_ref$female)
+  survey_ref$agegrp <- as.factor(survey_ref$agegrp)
   survey_ref$sex <- c("male", "female")[survey_ref$female]
   survey_ref$age <- c("1617", "1819", "2024", "2529", "3034", "3539", "4044", "4549", "5054", "5559", "6064", "6574", "6574", "75plus")[survey_ref$agegrp]
   survey_ref$race <- c("white", "black", "hispanic", "asian", "native", "other")[survey_ref$race]
@@ -243,6 +251,8 @@ MarginalToJoint <- function(marg, survey, state) {
   # split out the new age years
   message(state, ": final age groups")
   survey_ref <- survey[survey$state == state,]
+  survey_ref$female <- as.factor(survey_ref$female)
+  survey_ref$agegrp <- as.factor(survey_ref$agegrp)
   survey_ref$sex <- c("male", "female")[survey_ref$female]
   survey_ref$race <- c("white", "black", "hispanic", "asian", "native", "other")[survey_ref$race]
   survey_ref$citizenship <- c("noncitizen", "citizen")[survey_ref$citizen + 1]

@@ -46,6 +46,10 @@ if(vertica == TRUE){
     }
     return(dat)
   }
+} else {
+  longterm_pums_data <- fread("../../usa_00037.csv.gz") %>%
+    rename_all(.funs = tolower) %>%
+    mutate(stateicp = str_pad(statefip, 2, "left", "0"))
 }
 
 
@@ -55,61 +59,9 @@ if(vertica == TRUE){
 acs <- #V("
   sqldf("
   select 
-  year, 
+  year,
+  statefip,
   NULL as region, 
-  decode(stateicp, 
-    '01', 'CT', 
-    '02', 'ME', 
-    '03', 'MA', 
-    '04', 'NH', 
-    '05', 'RI', 
-    '06', 'VT', 
-    '11', 'DE', 
-    '12', 'NJ', 
-    '13', 'NY', 
-    '14', 'PA', 
-    '21', 'IL', 
-    '22', 'IN', 
-    '23', 'MI', 
-    '24', 'OH', 
-    '25', 'WI', 
-    '31', 'IA', 
-    '32', 'KS', 
-    '33', 'MN', 
-    '34', 'MO', 
-    '35', 'NE', 
-    '36', 'ND', 
-    '37', 'SD', 
-    '40', 'VA', 
-    '41', 'AL', 
-    '42', 'AR', 
-    '43', 'FL', 
-    '44', 'GA', 
-    '45', 'LA', 
-    '46', 'MS', 
-    '47', 'NC', 
-    '48', 'SC', 
-    '49', 'TX', 
-    '51', 'KY', 
-    '52', 'MD', 
-    '53', 'OK', 
-    '54', 'TN', 
-    '56', 'WV', 
-    '61', 'AZ', 
-    '62', 'CO', 
-    '63', 'ID', 
-    '64', 'MT', 
-    '65', 'NV', 
-    '66', 'NM', 
-    '67', 'UT', 
-    '68', 'WY', 
-    '71', 'CA', 
-    '72', 'OR', 
-    '73', 'WA', 
-    '81', 'AK', 
-    '82', 'HI', 
-    '98', 'DC', 
-    NULL) as state, 
   case when age < 18 then 1
        when age < 20 then 2
        when age < 25 then 3
@@ -124,7 +76,8 @@ acs <- #V("
        when age < 70 then 12
        when age < 75 then 13
        when age >= 75 then 14 else NULL end as agegrp,
-  decode(sex, 1, 1, 2, 2, NULL) as female,
+  case when sex = 2 then 1
+       when sex = 1 then 0 end as female, 
   case when hispan in (0, 9) then
     case when race = 1 then 1 -- white
          when race = 2 then 2 -- black
@@ -144,12 +97,14 @@ acs <- #V("
        else NULL end as married,
   case when citizen <= 2 then 1 else 0 end as citizen, 
   sum(perwt) as n
-  from publicdata.longterm_pums_data
+  from longterm_pums_data
   where age >= 16
   and year >= 2000
   group by 1, 2, 3, 4, 5, 6, 7, 8, 9
   order by 1, 2, 3, 4, 5, 6, 7, 8, 9
 ")
+
+acs <- acs %>% left_join(state.fips, by = c("statefip" = "fips")) %>% rename(state = abb)
 
 region_lookup <- c(
   'AK'=4, 'AL'=3, 'AR'=3, 'AZ'=4, 'CA'=4, 'CO'=4, 'CT'=1, 'DC'=5, 'DE'=1, 'FL'=3, 'GA'=3, 
@@ -175,61 +130,10 @@ ind$lab <- gsub("[^a-z]", "", tolower(ind$code))
 ind <- split(x=ind$ind, f=ind$lab)
 ind <- sapply(ind, function(i) paste0(i, collapse=","))
 
-occ <- V(paste0("
+occ <- #V(paste0("
+  sqldf(paste0("
   select 
-  decode(stateicp, 
-    '01', 'CT', 
-    '02', 'ME', 
-    '03', 'MA', 
-    '04', 'NH', 
-    '05', 'RI', 
-    '06', 'VT', 
-    '11', 'DE', 
-    '12', 'NJ', 
-    '13', 'NY', 
-    '14', 'PA', 
-    '21', 'IL', 
-    '22', 'IN', 
-    '23', 'MI', 
-    '24', 'OH', 
-    '25', 'WI', 
-    '31', 'IA', 
-    '32', 'KS', 
-    '33', 'MN', 
-    '34', 'MO', 
-    '35', 'NE', 
-    '36', 'ND', 
-    '37', 'SD', 
-    '40', 'VA', 
-    '41', 'AL', 
-    '42', 'AR', 
-    '43', 'FL', 
-    '44', 'GA', 
-    '45', 'LA', 
-    '46', 'MS', 
-    '47', 'NC', 
-    '48', 'SC', 
-    '49', 'TX', 
-    '51', 'KY', 
-    '52', 'MD', 
-    '53', 'OK', 
-    '54', 'TN', 
-    '56', 'WV', 
-    '61', 'AZ', 
-    '62', 'CO', 
-    '63', 'ID', 
-    '64', 'MT', 
-    '65', 'NV', 
-    '66', 'NM', 
-    '67', 'UT', 
-    '68', 'WY', 
-    '71', 'CA', 
-    '72', 'OR', 
-    '73', 'WA', 
-    '81', 'AK', 
-    '82', 'HI', 
-    '98', 'DC', 
-    NULL) as state, 
+  statefip,
   case when age < 18 then 1
        when age < 20 then 2
        when age < 25 then 3
@@ -244,7 +148,8 @@ occ <- V(paste0("
        when age < 70 then 12
        when age < 75 then 13
        when age >= 75 then 14 else NULL end as agegrp,
-  decode(sex, 1, 1, 2, 2, NULL) as female,
+  case when sex = 2 then 1
+       when sex = 1 then 0 end as female, 
   case when hispan in (0, 9) then
     case when race = 1 then 1 -- white
          when race = 2 then 2 -- black
@@ -263,23 +168,23 @@ occ <- V(paste0("
        when marst in (3, 4, 5, 6) then 1 -- non-married
        else NULL end as married,
   case when citizen <= 2 then 1 else 0 end as citizen, 
-  sum(case when empstat = 1 and occ2010 is not null then perwt else 0 end) as n_occ, 
+  sum(case when empstat = 1 and occ is not null then perwt else 0 end) as n_occ, 
   sum(case when empstat = 1 and ind is not null then perwt else 0 end) as n_ind, 
   sum(perwt) as n_emp, 
-  ", paste0("sum(case when empstat = 1 and occ2010 in (", occ, ") then perwt else 0 end) / 
-    sum(case when empstat = 1 and occ2010 is not null then perwt else 0 end) as occ_", names(occ), collapse=", "), ", 
+  ", paste0("sum(case when empstat = 1 and occ in (", occ, ") then perwt else 0 end) / 
+    sum(case when empstat = 1 and occ is not null then perwt else 0 end) as occ_", names(occ), collapse=", "), ", 
   ", paste0("sum(case when empstat = 1 and ind in (", ind, ") then perwt else 0 end) / 
     sum(case when empstat = 1 and ind is not null then perwt else 0 end) as ind_", names(ind), collapse=", "), ", 
   sum(case when empstat = 1 then perwt else 0 end) / sum(perwt) as emp_employed, 
   sum(case when empstat = 2 then perwt else 0 end) / sum(perwt) as emp_unemployed, 
   sum(case when empstat = 3 then perwt else 0 end) / sum(perwt) as emp_notinlaborforce
-  from publicdata.longterm_pums_data
+  from longterm_pums_data
   where age >= 16
-  and year >= 2013
-  and year <= 2017
   group by 1, 2, 3, 4, 5, 6, 7
   order by 1, 2, 3, 4, 5, 6, 7
 "))
+#  and year >= 2013
+#  and year <= 2017
 occ$region <- region_lookup[occ$state]
 
 ################################################################################################################

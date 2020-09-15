@@ -1,5 +1,5 @@
 require(pacman)
-p_load(sqldf, arm, data.table, tidyr, dplyr, doMC, foreach, stringr, openxlsx, yaml, tidycensus,
+p_load(sqldf, arm, data.table, tidyr, dplyr, tigris, doMC, foreach, stringr, openxlsx, yaml, tidycensus,
        htmltab, RJDBC, glmnet, gtools#, colorout
        )
 
@@ -23,3 +23,13 @@ source(paste0(wd, "unemployment_cps_mrp/downloaded_data/laus/laus_download.R"))
 vertica = FALSE
 source(paste0(wd, "unemployment_insurance_claims/02_state_claims_weekly.R"))
 source(paste0(wd, "unemployment_insurance_claims/03_state_claims_weekly_analysis.R"))
+
+source(paste0(wd, "unemployment_cps_mrp/run_mrp/01_load_acsocc_data.R"))
+source(paste0(wd, "unemployment_cps_mrp/run_mrp/02_occ_models.R"))
+source(paste0(wd, "unemployment_cps_mrp/run_mrp/03a_ipums_version.R"))
+source(paste0(wd, "unemployment_cps_mrp/run_mrp/03b_bls_version.R"))
+source(paste0(wd, "unemployment_cps_mrp/run_mrp/04a_state_yhat.R"))
+source(paste0(wd, "unemployment_cps_mrp/run_mrp/04b_county_yhat.R"))
+source(paste0(wd, "unemployment_cps_mrp/run_mrp/04c_tract_yhat.R"))
+source(paste0(wd, "unemployment_cps_mrp/run_mrp/05_correct_to_laus.R"))
+source(paste0(wd, "unemployment_cps_mrp/run_mrp/06_cps_checks.R"))

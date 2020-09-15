@@ -21,7 +21,7 @@ if(vertica == TRUE){
   conn <- dbConnect(drv, paste0("jdbc:vertica://", vertica_host, ":5433/vertica4"), vertica_username, vertica_password)       ### analytics cluster
   V <- function(x) dbGetQuery(conn, x)
 } else {
-  publicdata.longterm_pums_data <- read.spss("usa_00036.sav", to.data.frame = TRUE)
+  longterm_pums_data <- fread("../../../usa_00037.csv.gz")
 }
 
 ################################################################################################################
@@ -31,59 +31,7 @@ if(vertica == TRUE){
 survey <- #V("
   sqldf("
   select 
-  decode(stateicp, 
-    '01', 'CT', 
-    '02', 'ME', 
-    '03', 'MA', 
-    '04', 'NH', 
-    '05', 'RI', 
-    '06', 'VT', 
-    '11', 'DE', 
-    '12', 'NJ', 
-    '13', 'NY', 
-    '14', 'PA', 
-    '21', 'IL', 
-    '22', 'IN', 
-    '23', 'MI', 
-    '24', 'OH', 
-    '25', 'WI', 
-    '31', 'IA', 
-    '32', 'KS', 
-    '33', 'MN', 
-    '34', 'MO', 
-    '35', 'NE', 
-    '36', 'ND', 
-    '37', 'SD', 
-    '40', 'VA', 
-    '41', 'AL', 
-    '42', 'AR', 
-    '43', 'FL', 
-    '44', 'GA', 
-    '45', 'LA', 
-    '46', 'MS', 
-    '47', 'NC', 
-    '48', 'SC', 
-    '49', 'TX', 
-    '51', 'KY', 
-    '52', 'MD', 
-    '53', 'OK', 
-    '54', 'TN', 
-    '56', 'WV', 
-    '61', 'AZ', 
-    '62', 'CO', 
-    '63', 'ID', 
-    '64', 'MT', 
-    '65', 'NV', 
-    '66', 'NM', 
-    '67', 'UT', 
-    '68', 'WY', 
-    '71', 'CA', 
-    '72', 'OR', 
-    '73', 'WA', 
-    '81', 'AK', 
-    '82', 'HI', 
-    '98', 'DC', 
-    NULL) as state, 
+  statefip, 
   case when age < 18 then 1
        when age < 20 then 2
        when age < 25 then 3
@@ -98,7 +46,8 @@ survey <- #V("
        when age < 70 then 12
        when age < 75 then 13
        when age >= 75 then 14 else NULL end as agegrp,
-  decode(sex, 1, 1, 2, 2, NULL) as female,
+  case when sex = 2 then 1
+       else 0 end as female,
   case when hispan in (0, 9) then
     case when race = 1 then 1 -- white
          when race = 2 then 2 -- black
@@ -118,13 +67,17 @@ survey <- #V("
        else NULL end as married,
   case when citizen <= 2 then 1 else 0 end as citizen, 
   sum(perwt) as n
-  from publicdata.longterm_pums_data
+  from longterm_pums_data
   where age >= 16
   and year >= 2014
   and year <= 2018
   group by 1, 2, 3, 4, 5, 6, 7
   order by 1, 2, 3, 4, 5, 6, 7
-")
+", stringsAsFactors = TRUE)
+
+survey <- survey %>% rename_all(tolower)
+survey <- survey %>% left_join(fips_codes %>% mutate(state_code = as.numeric(state_code)) %>% select(state_code, state), by = c("statefip" = "state_code"))
+
 
 ################################################################################################################
 # load 2018 geographic data
