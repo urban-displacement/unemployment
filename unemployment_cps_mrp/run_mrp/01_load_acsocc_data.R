@@ -1,18 +1,6 @@
-library(colorout)
-library(sqldf)
-library(arm)
-library(data.table)
-library(dplyr)
-library(gtools)
-library(foreach)
-library(doMC)
-library(openxlsx)
-library(glmnet)
-library(RJDBC)
-
-remove(list=objects())
+rm(list=setdiff(ls(), c("wd", "CENSUS_API_KEY", "vertica")))
 options(digits=2, scipen=9, width=110, java.parameters = "-Xrs")
-setwd("~/unemployment/unemployment_cps_mrp/run_mrp")
+setwd(paste0(wd, "unemployment_cps_mrp/run_mrp"))
 
 PlottingWindow <- function() {
   quartz(width=2.75, height=7.75)
@@ -21,47 +9,51 @@ PlottingWindow <- function() {
 
 ################################################################################################################
 
-vertica_username <- system("echo $VERTICA_USERNAME", intern=TRUE)
-vertica_password <- system("echo $VERTICA_PASSWORD", intern=TRUE)
-vertica_host <- system("echo $VERTICA_HOST", intern=TRUE)
-
-drv <- JDBC("com.vertica.jdbc.Driver", "~/RJDBC/vertica-jdk5-6.1.3-0.jar")
-conn <- dbConnect(drv, paste0("jdbc:vertica://", vertica_host, ":5433/vertica4"), vertica_username, vertica_password)       ### analytics cluster
-V <- function(x) dbGetQuery(conn, x)
-
-VerticaLoadFromText <- function(table_name=NULL, query=NULL, colClasses=NULL) {
-  if (is.null(table_name)) {
-    keep_table <- FALSE
-    table_name <- paste0("yg_tmp_", round(runif(1, 1, 10000000)))
-  } else {
-    keep_table <- TRUE
-  }
-  if (!is.null(query))
-    system(paste0("
-    /opt/vertica/bin/vsql -U ", vertica_username, " -w ", vertica_password, " -h ", vertica_host, " -c \"
-    drop table if exists analytics.", table_name, " cascade;
-    create table analytics.", table_name, " as ", query, "
-    \""))
-
-  system(paste0("~/vertica_unload.sh ", table_name, ".txt ", table_name))
-  dat <- as.data.frame(data.table::fread(paste0(table_name, ".txt"), colClasses=colClasses))
-  colnames(dat) <- tolower(colnames(dat))
-  system(paste0("rm ", table_name, ".txt"))
-
-  if (!keep_table) {
-    system(paste0("
+if(vertica == TRUE){
+  vertica_username <- system("echo $VERTICA_USERNAME", intern=TRUE)
+  vertica_password <- system("echo $VERTICA_PASSWORD", intern=TRUE)
+  vertica_host <- system("echo $VERTICA_HOST", intern=TRUE)
+  
+  drv <- JDBC("com.vertica.jdbc.Driver", "~/RJDBC/vertica-jdk5-6.1.3-0.jar")
+  conn <- dbConnect(drv, paste0("jdbc:vertica://", vertica_host, ":5433/vertica4"), vertica_username, vertica_password)       ### analytics cluster
+  V <- function(x) dbGetQuery(conn, x)
+  
+  VerticaLoadFromText <- function(table_name=NULL, query=NULL, colClasses=NULL) {
+    if (is.null(table_name)) {
+      keep_table <- FALSE
+      table_name <- paste0("yg_tmp_", round(runif(1, 1, 10000000)))
+    } else {
+      keep_table <- TRUE
+    }
+    if (!is.null(query))
+      system(paste0("
+                    /opt/vertica/bin/vsql -U ", vertica_username, " -w ", vertica_password, " -h ", vertica_host, " -c \"
+                    drop table if exists analytics.", table_name, " cascade;
+                    create table analytics.", table_name, " as ", query, "
+                    \""))
+    
+    system(paste0("~/vertica_unload.sh ", table_name, ".txt ", table_name))
+    dat <- as.data.frame(data.table::fread(paste0(table_name, ".txt"), colClasses=colClasses))
+    colnames(dat) <- tolower(colnames(dat))
+    system(paste0("rm ", table_name, ".txt"))
+    
+    if (!keep_table) {
+      system(paste0("
     /opt/vertica/bin/vsql -U ", vertica_username, " -w ", vertica_password, " -h ", vertica_host, " -c \"
     truncate table analytics.", table_name, ";
     drop table analytics.", table_name, " cascade;
     \""))
+    }
+    return(dat)
   }
-  return(dat)
 }
+
 
 ################################################################################################################
 # acs
 
-acs <- V("
+acs <- #V("
+  sqldf("
   select 
   year, 
   NULL as region, 

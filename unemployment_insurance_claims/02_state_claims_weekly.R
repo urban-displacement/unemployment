@@ -1,14 +1,9 @@
-require(colorout)
-require(dplyr)
-require(htmltab)
-require(foreach)
-require(doMC)
-
-remove(list=objects())
+rm(list=setdiff(ls(), c("wd", "CENSUS_API_KEY", "vertica")))
 options(digits=2, scipen=9, width=110, java.parameters = "-Xrs")
-setwd(ifelse(Sys.info()[['sysname']]=="Darwin", 
-  "~/Documents/0Projects/covid19/unemployment/unemployment_insurance_claims/",
-  "~/"))
+#setwd(ifelse(Sys.info()[['sysname']]=="Darwin", 
+#  "~/Documents/0Projects/covid19/unemployment/unemployment_insurance_claims/",
+#  "~/"))
+setwd(paste0(wd, "unemployment_insurance_claims"))
 
 ################################################################################################################
 

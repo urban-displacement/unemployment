@@ -1,17 +1,6 @@
-library(colorout)
-library(sqldf)
-library(arm)
-library(data.table)
-library(dplyr)
-library(foreach)
-library(doMC)
-library(gtools)
-# library(tidyr)
-library(RJDBC)
-
-remove(list=objects())
+rm(list=setdiff(ls(), c("wd", "CENSUS_API_KEY", "vertica")))
 options(digits=2, scipen=9, width=110, java.parameters = "-Xrs")
-setwd("~/unemployment/unemployment_cps_mrp/mrsp/county")
+setwd(paste0(wd, "unemployment_cps_mrp/mrsp/county"))
 
 PlottingWindow <- function() {
   quartz(width=2.75, height=7.75)
@@ -23,19 +12,24 @@ PlottingWindow <- function() {
 ################################################################################################################
 # load data
 
-vertica_username <- system("echo $VERTICA_USERNAME", intern=TRUE)
-vertica_password <- system("echo $VERTICA_PASSWORD", intern=TRUE)
-vertica_host <- system("echo $VERTICA_HOST", intern=TRUE)
-
-drv <- JDBC("com.vertica.jdbc.Driver", "~/RJDBC/vertica-jdk5-6.1.3-0.jar")
-conn <- dbConnect(drv, paste0("jdbc:vertica://", vertica_host, ":5433/vertica4"), vertica_username, vertica_password)       ### analytics cluster
-V <- function(x) dbGetQuery(conn, x)
+if(vertica == TRUE){
+  vertica_username <- system("echo $VERTICA_USERNAME", intern=TRUE)
+  vertica_password <- system("echo $VERTICA_PASSWORD", intern=TRUE)
+  vertica_host <- system("echo $VERTICA_HOST", intern=TRUE)
+  
+  drv <- JDBC("com.vertica.jdbc.Driver", "~/RJDBC/vertica-jdk5-6.1.3-0.jar")
+  conn <- dbConnect(drv, paste0("jdbc:vertica://", vertica_host, ":5433/vertica4"), vertica_username, vertica_password)       ### analytics cluster
+  V <- function(x) dbGetQuery(conn, x)
+} else {
+  publicdata.longterm_pums_data <- read.spss("usa_00036.sav", to.data.frame = TRUE)
+}
 
 ################################################################################################################
 # load survey data
 # use 2014-2018 as the survey joint
 
-survey <- V("
+survey <- #V("
+  sqldf("
   select 
   decode(stateicp, 
     '01', 'CT', 

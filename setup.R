@@ -1,18 +1,8 @@
-#library(colorout)
-library(sqldf)
-#library(arm)
-library(data.table)
-library(tidyr)
-library(dplyr)
-library(doMC)
-library(foreach)
-library(tidyr)
-library(stringr)
-library(openxlsx)
-library(yaml)
-library(tidycensus)
-library(htmltab)
-library(RJDBC)
+require(pacman)
+p_load(sqldf, arm, data.table, tidyr, dplyr, doMC, foreach, stringr, openxlsx, yaml, tidycensus,
+       htmltab, RJDBC, glmnet, gtools#, colorout
+       )
+
 wd <- "/Users/ajramiller/Git/unemployment/"
 setwd(wd)
 census_api_key(read_yaml("/Users/ajramiller/census.yaml"))
